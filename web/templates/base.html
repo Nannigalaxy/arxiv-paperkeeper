@@ -1,0 +1,388 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - ArXiv PaperKeeper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/nprogress@0.2.0/nprogress.css">
+    <script src="https://unpkg.com/nprogress@0.2.0/nprogress.js"></script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-200">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <img src="/static/arxiv-logo.svg" alt="arXiv" class="h-8">
+                    <span class="text-2xl font-bold logo-text">PaperKeeper</span>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="/"
+                        class="nav-link text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Browse
+                        Papers</a>
+                    <a href="/library"
+                        class="nav-link text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">My
+                        Library ({{.LibraryCount}})</a>
+
+                    <div class="flex items-center gap-4 border-l pl-4 border-gray-200 dark:border-gray-700">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            {{.PaperCount}} papers
+                        </div>
+                        <button id="theme-toggle"
+                            class="theme-toggle p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            title="Toggle theme">
+                            <i data-lucide="sun" class="w-5 h-5" id="theme-icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile Controls -->
+                <div class="md:hidden flex items-center gap-4 z-50">
+                    <button id="mobile-menu-btn"
+                        class="p-2 rounded-md text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu"
+            class="hidden md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div class="px-4 py-3 space-y-3">
+                <a href="/"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Browse
+                    Papers</a>
+                <a href="/library"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">My
+                    Library ({{.LibraryCount}})</a>
+
+                <button id="theme-toggle-mobile"
+                    class="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left">
+                    <span class="flex-1">Switch Theme</span>
+                    <i data-lucide="sun" class="w-5 h-5" id="theme-icon-mobile"></i>
+                </button>
+
+                <div
+                    class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 mt-2 pt-3">
+                    Total Papers: {{.PaperCount}}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 flex-1">
+        {{template "content" .}}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-12">
+        <div class="container mx-auto px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p>ArXiv PaperKeeper - A lightweight arXiv paper browser</p>
+            <p class="mt-2">
+                <button hx-post="/admin/refresh" hx-target="#refresh-status" hx-indicator="#refresh-spinner"
+                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400 inline-flex items-center gap-2">
+                    <span>Refresh Papers</span>
+                    <span id="refresh-spinner" class="htmx-indicator">
+                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                    </span>
+                </button>
+            </p>
+            <p class="mt-2 text-xs text-gray-500">
+                Last Updated: <span id="local-time"></span>
+            </p>
+            <div id="refresh-status" class="mt-2"></div>
+        </div>
+    </footer>
+
+    <!-- Toast Container -->
+    <div id="toast-container"
+        class="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-full max-w-sm pointer-events-none">
+    </div>
+
+    <!-- Go to Top Button -->
+    <button id="scroll-to-top"
+        class="fixed bottom-8 right-8 bg-gray-500 hover:bg-gray-600 text-white p-3 rounded-full shadow-lg opacity-0 transition-all duration-300 z-40 pointer-events-none transform hover:scale-110"
+        title="Go to Top">
+        <i data-lucide="arrow-up" class="w-6 h-6"></i>
+    </button>
+
+    <!-- Page Loader -->
+    <div id="page-loader"
+        class="fixed inset-0 bg-white dark:bg-gray-900 z-[100] flex items-center justify-center transition-opacity duration-300">
+        <div class="flex flex-col items-center gap-4">
+            <div class="w-24 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div class="h-full bg-red-800 rounded-full animate-pulse" style="width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Management
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeToggleMobile = document.getElementById('theme-toggle-mobile');
+
+        // Initialize theme from localStorage or system preference
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            const theme = savedTheme || systemTheme;
+
+            html.setAttribute('data-theme', theme);
+            updateThemeIcon(theme);
+        }
+
+        // Update theme icon
+        function updateThemeIcon(theme) {
+            const iconHtml = `<i data-lucide="${theme === 'dark' ? 'moon' : 'sun'}" class="w-5 h-5"></i>`;
+
+            if (themeToggle) {
+                themeToggle.innerHTML = iconHtml;
+            }
+            if (themeToggleMobile) {
+                themeToggleMobile.innerHTML = iconHtml;
+            }
+            lucide.createIcons();
+        }
+
+        // Toggle theme
+        function toggleTheme() {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        // Initialize theme on page load
+        initTheme();
+
+        // Add click handlers
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+        if (themeToggleMobile) {
+            themeToggleMobile.addEventListener('click', toggleTheme);
+        }
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // NProgress Configuration
+        NProgress.configure({ showSpinner: false });
+
+        // Page Loader
+        const pageLoader = document.getElementById('page-loader');
+
+        // Hide page loader when page is fully loaded
+        window.addEventListener('load', () => {
+            if (pageLoader) {
+                pageLoader.style.opacity = '0';
+                setTimeout(() => {
+                    pageLoader.style.display = 'none';
+                }, 300);
+            }
+        });
+
+        // HTMX Events for NProgress and Page Loader
+        document.body.addEventListener('htmx:beforeRequest', (event) => {
+            // Only show page loader for navigation requests, not for button actions like save/remove
+            const target = event.detail.target;
+            const isButtonAction = target && target.tagName === 'BUTTON';
+
+            if (!isButtonAction) {
+                NProgress.start();
+                if (pageLoader && pageLoader.style.display === 'none') {
+                    pageLoader.style.display = 'flex';
+                    pageLoader.style.opacity = '1';
+                }
+            }
+        });
+
+        document.body.addEventListener('htmx:afterRequest', (event) => {
+            const target = event.detail.target;
+            const isButtonAction = target && target.tagName === 'BUTTON';
+
+            if (!isButtonAction) {
+                NProgress.done();
+                if (pageLoader && pageLoader.style.display === 'flex') {
+                    pageLoader.style.opacity = '0';
+                    setTimeout(() => {
+                        pageLoader.style.display = 'none';
+                    }, 300);
+                }
+            }
+            lucide.createIcons(); // Re-initialize icons after HTMX swaps
+        });
+
+        document.body.addEventListener('htmx:historyRestore', () => {
+            lucide.createIcons();
+        });
+
+        // Toast Notification System
+        window.showToast = function (message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            let iconName = 'info';
+            if (type === 'success') iconName = 'check-circle';
+            if (type === 'error') iconName = 'alert-circle';
+
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" class="w-5 h-5 ${type === 'success' ? 'text-green-500' : type === 'error' ? 'text-red-500' : 'text-blue-500'}"></i>
+                <span class="font-medium">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s forwards';
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, 3000);
+        };
+
+        // Global Clipboard Helper
+        window.copyToClipboard = function (text, type) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`${type} copied to clipboard!`, 'success');
+            }).catch(() => {
+                showToast('Failed to copy to clipboard', 'error');
+            });
+        };
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ignore if typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+                if (e.key === 'Escape') {
+                    e.target.blur();
+                }
+                return;
+            }
+
+            switch (e.key) {
+                case '/':
+                    e.preventDefault();
+                    const searchInput = document.querySelector('input[name="q"]');
+                    if (searchInput) {
+                        searchInput.focus();
+                        showToast('Search focused', 'info');
+                    }
+                    break;
+                case 'j':
+                    window.scrollBy({ top: 300, behavior: 'smooth' });
+                    break;
+                case 'k':
+                    window.scrollBy({ top: -300, behavior: 'smooth' });
+                    break;
+            }
+        });
+
+        // Listen for custom showToast event
+        document.body.addEventListener('showToast', (evt) => {
+            if (evt.detail && evt.detail.message) {
+                showToast(evt.detail.message, evt.detail.type);
+            }
+        });
+
+        // Listen for toast triggers from HTMX
+        document.body.addEventListener('htmx:afterSwap', (evt) => {
+            const triggerHeader = evt.detail.xhr.getResponseHeader("HX-Trigger-After-Swap");
+            if (triggerHeader) {
+                try {
+                    const trigger = JSON.parse(triggerHeader);
+                    if (trigger.showToast) {
+                        showToast(trigger.showToast.message, trigger.showToast.type);
+                    }
+                } catch (e) {
+                    console.error("Error parsing toast trigger:", e);
+                }
+            }
+        });
+
+        // Local Time Update
+        const localTimeSpan = document.getElementById('local-time');
+        if (localTimeSpan) {
+            localTimeSpan.textContent = new Date().toLocaleString();
+        }
+
+        // Go to Top Button
+        const scrollToTopBtn = document.getElementById('scroll-to-top');
+
+        if (scrollToTopBtn) {
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    scrollToTopBtn.classList.remove('opacity-0', 'pointer-events-none');
+                    scrollToTopBtn.classList.add('opacity-80', 'pointer-events-auto', 'hover:opacity-100');
+                } else {
+                    scrollToTopBtn.classList.add('opacity-0', 'pointer-events-none');
+                    scrollToTopBtn.classList.remove('opacity-80', 'pointer-events-auto', 'hover:opacity-100');
+                }
+            });
+
+            scrollToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    </script>
+</body>
+
+</html>
+{{end}}

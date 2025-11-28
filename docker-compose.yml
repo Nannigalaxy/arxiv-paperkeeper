@@ -1,0 +1,11 @@
+services:
+  arxiv-paperkeeper:
+    build: .
+    ports:
+      - "8075:8080"
+    volumes:
+      - ./data:/root/data
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - DB_PATH=/root/data/arxiv.db
