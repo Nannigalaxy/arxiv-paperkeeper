@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
@@ -434,8 +435,8 @@ func TestHandleExportLibrary(t *testing.T) {
 
 	// Check content-disposition header
 	contentDisp := w.Header().Get("Content-Disposition")
-	if !strings.Contains(contentDisp, `attachment; filename="saved_papers.csv"`) {
-		t.Errorf("Expected Content-Disposition to contain attachment filename, got '%s'", contentDisp)
+	if !strings.Contains(contentDisp, `attachment; filename="saved_papers_`) || !strings.HasSuffix(contentDisp, `.csv"`) {
+		t.Errorf("Expected Content-Disposition to contain attachment filename pattern, got '%s'", contentDisp)
 	}
 
 	// Verify CSV contents
@@ -445,17 +446,22 @@ func TestHandleExportLibrary(t *testing.T) {
 		t.Fatalf("Expected 3 lines in CSV (header + 2 papers), got %d: %q", len(lines), lines)
 	}
 
-	if lines[0] != "Title,PDF Link" {
-		t.Errorf("Expected first line to be header 'Title,PDF Link', got '%s'", lines[0])
+	expectedHeader := "Title,PDF Link,Authors,Categories,Published Date"
+	if lines[0] != expectedHeader {
+		t.Errorf("Expected first line to be header '%s', got '%s'", expectedHeader, lines[0])
 	}
 
-	// Paper titles: "Test Paper 1", "Test Paper 2" (sorted DESC by published timestamp or ID? wait, GetPapers sorts by published at desc, so the two papers should be listed)
-	// Check that both paper titles and their links are present
-	if !strings.Contains(body, "Test Paper 1,http://arxiv.org/pdf/test") {
-		t.Error("Expected CSV to contain paper 1 data")
+	// Paper titles: "Test Paper 1", "Test Paper 2"
+	// Check that both paper titles, links, authors, and categories are present
+	dateStr := time.Now().Format("2006-01-02")
+	expected1 := fmt.Sprintf("Test Paper 1,http://arxiv.org/pdf/test,Author 1,cs.AI,%s", dateStr)
+	expected2 := fmt.Sprintf("Test Paper 2,http://arxiv.org/pdf/test,Author 2,cs.AI,%s", dateStr)
+
+	if !strings.Contains(body, expected1) {
+		t.Errorf("Expected CSV to contain paper 1 data: %q", expected1)
 	}
-	if !strings.Contains(body, "Test Paper 2,http://arxiv.org/pdf/test") {
-		t.Error("Expected CSV to contain paper 2 data")
+	if !strings.Contains(body, expected2) {
+		t.Errorf("Expected CSV to contain paper 2 data: %q", expected2)
 	}
 }
 
