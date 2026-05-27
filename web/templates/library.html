@@ -64,19 +64,6 @@
                             </a>
                         </li>
 
-                        <!-- Unassigned Papers -->
-                        <li>
-                            <a href="/library?collection=unassigned"
-                                class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{if eq .SelectedCollection -1}}bg-red-50 text-red-850 dark:bg-red-950/40 dark:text-red-300 font-semibold{{else}}text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750{{end}}">
-                                <span class="flex items-center gap-2">
-                                    <i data-lucide="inbox" class="w-4 h-4 text-gray-400"></i>
-                                    <span>Unassigned Papers</span>
-                                </span>
-                                <span
-                                    class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full font-semibold">{{.UnassignedCount}}</span>
-                            </a>
-                        </li>
-
                         <!-- Divider -->
                         <li class="h-px bg-gray-150 dark:bg-gray-700 my-3"></li>
 
@@ -88,7 +75,7 @@
                                 class="flex-1 flex items-center gap-2 px-3 py-2 text-sm min-w-0 {{if eq $.SelectedCollection .ID}}text-red-800 dark:text-red-300 font-semibold{{else}}text-gray-700 dark:text-gray-200{{end}}">
                                 <i data-lucide="folder-open"
                                     class="w-4 h-4 flex-shrink-0 {{if eq $.SelectedCollection .ID}}text-red-700{{else}}text-gray-400 group-hover:text-red-700{{end}}"></i>
-                                <span class="truncate">{{.Name}}</span>
+                                <span class="truncate" title="{{.Name}}">{{.Name}}</span>
                             </a>
                             <div class="flex items-center gap-1 pr-2 flex-shrink-0">
                                 <span
@@ -112,14 +99,31 @@
                     </ul>
 
                     <!-- Create Collection Form -->
-                    <form hx-post="/collection/create"
-                        class="mt-4 flex gap-2 border-t border-gray-100 dark:border-gray-700 pt-4">
-                        <input type="text" name="name" placeholder="Create collection..." required
-                            class="flex-1 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-800 dark:bg-gray-700 dark:text-white">
-                        <button type="submit" class="btn btn-primary px-3 py-1.5" title="Create Collection">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                        </button>
-                    </form>
+                    <form
+    hx-post="/collection/create"
+    class="mt-4 flex items-center gap-2
+           border-t border-gray-100 dark:border-gray-700
+           pt-4 px-1">
+
+    <input
+        type="text"
+        name="name"
+        placeholder="Create collection..."
+        required
+        class="min-w-0 flex-1
+               px-3 py-1.5 text-xs
+               border border-gray-300 dark:border-gray-600
+               rounded-lg
+               focus:outline-none focus:ring-2 focus:ring-red-800
+               dark:bg-gray-700 dark:text-white">
+
+    <button
+        type="submit"
+        title="Create Collection"
+        class="btn btn-primary shrink-0 px-2.5 py-1.5">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+    </button>
+</form>
                 </div>
             </div>
         </div>
@@ -290,17 +294,6 @@
                                         {{end}}
                                         {{end}}
                                     </optgroup>
-
-                                    <!-- Move options (only if we are currently inside a custom collection) -->
-                                    {{if gt $.SelectedCollection 0}}
-                                    <optgroup label="Move to Collection">
-                                        {{range $.Collections}}
-                                        {{if ne .ID $.SelectedCollection}}
-                                        <option value="move:{{.ID}}">→ {{.Name}}</option>
-                                        {{end}}
-                                        {{end}}
-                                    </optgroup>
-                                    {{end}}
                                 </select>
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
@@ -384,13 +377,20 @@
                 </div>
 
                 <div class="flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700 pt-4">
-                    <button type="button" onclick="closeRenameModal()"
-                        class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-750 rounded-lg transition-colors">
+                    <button type="button" onclick="closeRenameModal()" class="px-4 py-2 text-sm font-medium rounded-lg
+           text-gray-700 dark:text-gray-200
+           bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black
+           transition duration-200 ease-in-out">
                         Cancel
                     </button>
-                    <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
-                        Save Changes
+
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-lg
+           !text-white
+           bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+           shadow-sm
+           transition duration-200 ease-in-out
+           flex items-center gap-1.5">
+                        Save
                     </button>
                 </div>
             </form>

@@ -116,36 +116,6 @@
             </div>
         </div>
         {{end}}
-
-        <!-- Tags -->
-        <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Tags</h2>
-
-            <div id="tags-{{.Paper.ID}}" class="mb-4 flex flex-wrap gap-2">
-                {{range .Paper.Tags}}
-                <span class="tag">
-                    {{.Name}}
-                    <button hx-post="/tag/remove" hx-vals='{"paper_id":"{{$.Paper.ID}}","tag_id":{{.ID}}}'
-                        hx-target="#tags-{{$.Paper.ID}}" hx-swap="innerHTML" class="tag-remove">
-                        ×
-                    </button>
-                </span>
-                {{else}}
-                <span class="text-gray-500 dark:text-gray-400">No tags yet</span>
-                {{end}}
-            </div>
-
-            <!-- Add Tag Form -->
-            <form hx-post="/tag/add" hx-target="#tags-{{.Paper.ID}}" hx-swap="innerHTML" class="flex gap-2">
-                <input type="hidden" name="paper_id" value="{{.Paper.ID}}">
-                <input type="text" name="tag_name" placeholder="Add a tag..."
-                    class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    required>
-                <button type="submit" class="btn btn-primary">
-                    Add Tag
-                </button>
-            </form>
-        </div>
     </div>
     {{else}}
     <!-- Paper Not Found -->
