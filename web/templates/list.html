@@ -19,21 +19,36 @@
                 <div class="flex flex-col md:flex-row gap-2 md:gap-4">
                     <select name="category" class="select w-full md:w-auto">
                         <option value="">All Categories</option>
-                        <option value="cs.AI" {{if eq $.SelectedCategory "cs.AI" }}selected{{end}}>cs.AI — Artificial Intelligence</option>
-                        <option value="cs.LG" {{if eq $.SelectedCategory "cs.LG" }}selected{{end}}>cs.LG — Machine Learning</option>
-                        <option value="cs.CV" {{if eq $.SelectedCategory "cs.CV" }}selected{{end}}>cs.CV — Computer Vision</option>
-                        <option value="cs.CL" {{if eq $.SelectedCategory "cs.CL" }}selected{{end}}>cs.CL — Computation &amp; Language</option>
-                        <option value="cs.NE" {{if eq $.SelectedCategory "cs.NE" }}selected{{end}}>cs.NE — Neural Computing</option>
-                        <option value="cs.RO" {{if eq $.SelectedCategory "cs.RO" }}selected{{end}}>cs.RO — Robotics</option>
-                        <option value="cs.CR" {{if eq $.SelectedCategory "cs.CR" }}selected{{end}}>cs.CR — Cryptography</option>
-                        <option value="cs.DB" {{if eq $.SelectedCategory "cs.DB" }}selected{{end}}>cs.DB — Databases</option>
-                        <option value="cs.DC" {{if eq $.SelectedCategory "cs.DC" }}selected{{end}}>cs.DC — Distributed Computing</option>
-                        <option value="cs.SE" {{if eq $.SelectedCategory "cs.SE" }}selected{{end}}>cs.SE — Software Engineering</option>
-                        <option value="math.CO" {{if eq $.SelectedCategory "math.CO" }}selected{{end}}>math.CO — Combinatorics</option>
-                        <option value="math.PR" {{if eq $.SelectedCategory "math.PR" }}selected{{end}}>math.PR — Probability</option>
-                        <option value="math.ST" {{if eq $.SelectedCategory "math.ST" }}selected{{end}}>math.ST — Statistics</option>
-                        <option value="stat.ML" {{if eq $.SelectedCategory "stat.ML" }}selected{{end}}>stat.ML — Machine Learning</option>
-                        <option value="quant-ph" {{if eq $.SelectedCategory "quant-ph" }}selected{{end}}>quant-ph — Quantum Physics</option>
+                        <option value="cs.AI" {{if eq $.SelectedCategory "cs.AI" }}selected{{end}}>cs.AI — Artificial
+                            Intelligence</option>
+                        <option value="cs.LG" {{if eq $.SelectedCategory "cs.LG" }}selected{{end}}>cs.LG — Machine
+                            Learning</option>
+                        <option value="cs.CV" {{if eq $.SelectedCategory "cs.CV" }}selected{{end}}>cs.CV — Computer
+                            Vision</option>
+                        <option value="cs.CL" {{if eq $.SelectedCategory "cs.CL" }}selected{{end}}>cs.CL — Computation
+                            &amp; Language</option>
+                        <option value="cs.NE" {{if eq $.SelectedCategory "cs.NE" }}selected{{end}}>cs.NE — Neural
+                            Computing</option>
+                        <option value="cs.RO" {{if eq $.SelectedCategory "cs.RO" }}selected{{end}}>cs.RO — Robotics
+                        </option>
+                        <option value="cs.CR" {{if eq $.SelectedCategory "cs.CR" }}selected{{end}}>cs.CR — Cryptography
+                        </option>
+                        <option value="cs.DB" {{if eq $.SelectedCategory "cs.DB" }}selected{{end}}>cs.DB — Databases
+                        </option>
+                        <option value="cs.DC" {{if eq $.SelectedCategory "cs.DC" }}selected{{end}}>cs.DC — Distributed
+                            Computing</option>
+                        <option value="cs.SE" {{if eq $.SelectedCategory "cs.SE" }}selected{{end}}>cs.SE — Software
+                            Engineering</option>
+                        <option value="math.CO" {{if eq $.SelectedCategory "math.CO" }}selected{{end}}>math.CO —
+                            Combinatorics</option>
+                        <option value="math.PR" {{if eq $.SelectedCategory "math.PR" }}selected{{end}}>math.PR —
+                            Probability</option>
+                        <option value="math.ST" {{if eq $.SelectedCategory "math.ST" }}selected{{end}}>math.ST —
+                            Statistics</option>
+                        <option value="stat.ML" {{if eq $.SelectedCategory "stat.ML" }}selected{{end}}>stat.ML — Machine
+                            Learning</option>
+                        <option value="quant-ph" {{if eq $.SelectedCategory "quant-ph" }}selected{{end}}>quant-ph —
+                            Quantum Physics</option>
                     </select>
 
                     <button type="submit" class="btn btn-secondary w-full md:w-auto">
@@ -80,9 +95,9 @@
                             {{.PublishedAt.Format "Jan 2, 2006"}}
                         </span>
                         {{range (splitCategories .Categories)}}
-                        <a href="/?category={{.}}" 
-                           class="text-gray-500 dark:text-gray-400 flex items-center gap-1 hover:text-red-700 dark:hover:text-red-400 transition-colors"
-                           title="Filter by {{.}}">
+                        <a href="/?category={{.}}"
+                            class="text-gray-500 dark:text-gray-400 flex items-center gap-1 hover:text-red-700 dark:hover:text-red-400 transition-colors"
+                            title="Filter by {{.}}">
                             <i data-lucide="tag" class="w-3.5 h-3.5"></i>
                             <span>{{.}}</span>
                         </a>
@@ -92,54 +107,55 @@
                     <!-- Collection Badges -->
                     <div class="mt-3 flex flex-wrap gap-2">
                         {{range .Collections}}
-                        <a href="/library?collection={{.ID}}" 
-                           class="tag bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors">
+                        <a href="/library?collection={{.ID}}"
+                            class="tag bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors">
                             <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1"></i>{{.Name}}
                         </a>
                         {{end}}
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:flex md:flex-col gap-2 w-full md:w-44 mt-4 md:mt-0 md:ml-4 flex-shrink-0">
+                <div
+                    class="grid grid-cols-2 md:flex md:flex-col gap-2 w-full md:w-44 mt-4 md:mt-0 md:ml-4 flex-shrink-0">
                     {{if .InLibrary}}
-                    <button hx-post="/library/remove/{{.ID}}" hx-swap="outerHTML"
-                        class="btn btn-sm btn-success w-full"
+                    <button hx-post="/library/remove/{{.ID}}" hx-swap="outerHTML" class="btn btn-sm btn-success w-full"
                         title="Saved to Library (Click to Remove)">
                         <i data-lucide="check" class="w-4 h-4"></i> Saved
                     </button>
                     {{else}}
-                    <button hx-post="/library/add/{{.ID}}" hx-swap="outerHTML"
-                        class="btn btn-sm btn-outline w-full" title="Save to Library">
+                    <button hx-post="/library/add/{{.ID}}" hx-swap="outerHTML" class="btn btn-sm btn-outline w-full"
+                        title="Save to Library">
                         <i data-lucide="bookmark" class="w-4 h-4"></i> Save
                     </button>
                     {{end}}
 
                     <!-- Collections Selector Dropdown -->
                     <div class="relative w-full">
-                        <select onchange="handleCollectionSelect(this, '{{.ID}}', '0')" 
-                                class="select select-sm w-full bg-white appearance-none cursor-pointer"
-                                title="Add to / Remove from Collections">
-                            <option value="" disabled selected>Collections...</option>
-                            
+                        <select onchange="handleCollectionSelect(this, '{{.ID}}', '0')"
+                            class="select select-sm w-full bg-white appearance-none cursor-pointer"
+                            title="Add to / Remove from Collections">
+                            <option value="" disabled selected>Save to Collections</option>
+
                             {{$paper := .}}
-                            
+
                             <!-- Add / Remove options -->
                             <optgroup label="Add/Remove Collection">
                                 {{range $col := $.Collections}}
-                                    {{$inThis := false}}
-                                    {{range $paper.Collections}}
-                                        {{if eq .ID $col.ID}}{{$inThis = true}}{{end}}
-                                    {{end}}
-                                    
-                                    {{if $inThis}}
-                                        <option value="remove:{{$col.ID}}">✓ {{$col.Name}} (Remove)</option>
-                                    {{else}}
-                                        <option value="add:{{$col.ID}}">+ {{$col.Name}}</option>
-                                    {{end}}
+                                {{$inThis := false}}
+                                {{range $paper.Collections}}
+                                {{if eq .ID $col.ID}}{{$inThis = true}}{{end}}
+                                {{end}}
+
+                                {{if $inThis}}
+                                <option value="remove:{{$col.ID}}">✓ {{$col.Name}} (Remove)</option>
+                                {{else}}
+                                <option value="add:{{$col.ID}}">+ {{$col.Name}}</option>
+                                {{end}}
                                 {{end}}
                             </optgroup>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
+                        <div
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
                             <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
                         </div>
                     </div>

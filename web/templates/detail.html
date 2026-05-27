@@ -58,43 +58,45 @@
             <button hx-post="/library/toggle-read/{{.Paper.ID}}" hx-swap="outerHTML"
                 class="btn {{if .Paper.IsRead}}btn-success{{else}}btn-outline{{end}} w-full">
                 {{if .Paper.IsRead}}
-                    <i data-lucide="check" class="w-4 h-4"></i> Read
+                <i data-lucide="check" class="w-4 h-4"></i> Read
                 {{else}}
-                    <i data-lucide="book-open" class="w-4 h-4"></i> Mark Read
+                <i data-lucide="book-open" class="w-4 h-4"></i> Mark Read
                 {{end}}
             </button>
             {{else}}
-            <button hx-post="/library/add/{{.Paper.ID}}" hx-swap="outerHTML" class="btn btn-primary w-full sm:col-span-2">
+            <button hx-post="/library/add/{{.Paper.ID}}" hx-swap="outerHTML"
+                class="btn btn-primary w-full sm:col-span-2">
                 <i data-lucide="bookmark" class="w-4 h-4"></i> Save to Library
             </button>
             {{end}}
 
             <!-- Collections Selector Dropdown -->
             <div class="relative w-full">
-                <select onchange="handleCollectionSelect(this, '{{.Paper.ID}}', '0')" 
-                        class="select w-full bg-white appearance-none cursor-pointer"
-                        title="Add to / Remove from Collections">
-                    <option value="" disabled selected>Collections...</option>
-                    
+                <select onchange="handleCollectionSelect(this, '{{.Paper.ID}}', '0')"
+                    class="select w-full bg-white appearance-none cursor-pointer"
+                    title="Add to / Remove from Collections">
+                    <option value="" disabled selected>Save to Collections</option>
+
                     {{$paper := .Paper}}
-                    
+
                     <!-- Add / Remove options -->
                     <optgroup label="Add/Remove Collection">
                         {{range $col := $.Collections}}
-                            {{$inThis := false}}
-                            {{range $paper.Collections}}
-                                {{if eq .ID $col.ID}}{{$inThis = true}}{{end}}
-                            {{end}}
-                            
-                            {{if $inThis}}
-                                <option value="remove:{{$col.ID}}">✓ {{$col.Name}} (Remove)</option>
-                            {{else}}
-                                <option value="add:{{$col.ID}}">+ {{$col.Name}}</option>
-                            {{end}}
+                        {{$inThis := false}}
+                        {{range $paper.Collections}}
+                        {{if eq .ID $col.ID}}{{$inThis = true}}{{end}}
+                        {{end}}
+
+                        {{if $inThis}}
+                        <option value="remove:{{$col.ID}}">✓ {{$col.Name}} (Remove)</option>
+                        {{else}}
+                        <option value="add:{{$col.ID}}">+ {{$col.Name}}</option>
+                        {{end}}
                         {{end}}
                     </optgroup>
                 </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
+                <div
+                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
                     <i data-lucide="chevron-down" class="w-4 h-4"></i>
                 </div>
             </div>
@@ -106,7 +108,8 @@
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Collections</h2>
             <div class="flex flex-wrap gap-2">
                 {{range .Paper.Collections}}
-                <span class="tag bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
+                <span
+                    class="tag bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
                     <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1"></i>{{.Name}}
                 </span>
                 {{end}}
