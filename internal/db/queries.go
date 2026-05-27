@@ -61,6 +61,19 @@ func (db *DB) GetPapers(params models.SearchParams) ([]models.Paper, int, error)
 		args = append(args, params.Tag)
 	}
 
+	if params.CollectionID > 0 {
+		conditions = append(conditions, `EXISTS (
+			SELECT 1 FROM collection_papers cp
+			WHERE cp.paper_id = p.id AND cp.collection_id = ?
+		)`)
+		args = append(args, params.CollectionID)
+	} else if params.CollectionID == -1 {
+		conditions = append(conditions, `NOT EXISTS (
+			SELECT 1 FROM collection_papers cp
+			WHERE cp.paper_id = p.id
+		)`)
+	}
+
 	whereClause := ""
 	if len(conditions) > 0 {
 		whereClause = "WHERE " + strings.Join(conditions, " AND ")
@@ -116,13 +129,19 @@ func (db *DB) GetPapers(params models.SearchParams) ([]models.Paper, int, error)
 		return nil, 0, fmt.Errorf("failed to fetch papers: %w", err)
 	}
 
-	// Fetch tags for each paper
+	// Fetch tags and collections for each paper
 	for i := range papers {
 		tags, err := db.GetPaperTags(papers[i].ID)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to fetch tags for paper %s: %w", papers[i].ID, err)
 		}
 		papers[i].Tags = tags
+
+		cols, err := db.GetPaperCollections(papers[i].ID)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to fetch collections for paper %s: %w", papers[i].ID, err)
+		}
+		papers[i].Collections = cols
 	}
 
 	return papers, total, nil
@@ -154,6 +173,13 @@ func (db *DB) GetPaperByID(id string) (*models.Paper, error) {
 		return nil, fmt.Errorf("failed to fetch tags: %w", err)
 	}
 	paper.Tags = tags
+
+	// Fetch collections
+	cols, err := db.GetPaperCollections(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch collections: %w", err)
+	}
+	paper.Collections = cols
 
 	return &paper, nil
 }
@@ -268,4 +294,190 @@ func (db *DB) GetLibraryCount() (int, error) {
 	var count int
 	err := db.Get(&count, "SELECT COUNT(*) FROM library")
 	return count, err
+}
+
+// CreateCollection creates a new collection
+func (db *DB) CreateCollection(name string) (int, error) {
+	// Trim whitespace
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return 0, fmt.Errorf("collection name cannot be empty")
+	}
+
+	// Try to get existing collection
+	var col models.Collection
+	err := db.Get(&col, "SELECT * FROM collections WHERE name = ?", name)
+	if err == nil {
+		return col.ID, fmt.Errorf("collection '%s' already exists", name)
+	}
+	if err != sql.ErrNoRows {
+		return 0, fmt.Errorf("failed to check for existing collection: %w", err)
+	}
+
+	result, err := db.Exec("INSERT INTO collections (name) VALUES (?)", name)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create collection: %w", err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get collection ID: %w", err)
+	}
+
+	return int(id), nil
+}
+
+// RenameCollection renames an existing collection
+func (db *DB) RenameCollection(id int, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return fmt.Errorf("collection name cannot be empty")
+	}
+
+	// Check if another collection has the same name
+	var col models.Collection
+	err := db.Get(&col, "SELECT * FROM collections WHERE name = ? AND id != ?", name, id)
+	if err == nil {
+		return fmt.Errorf("collection '%s' already exists", name)
+	}
+	if err != sql.ErrNoRows {
+		return fmt.Errorf("failed to check for duplicate collection name: %w", err)
+	}
+
+	_, err = db.Exec("UPDATE collections SET name = ? WHERE id = ?", name, id)
+	return err
+}
+
+// DeleteCollection deletes a collection
+func (db *DB) DeleteCollection(id int) error {
+	_, err := db.Exec("DELETE FROM collections WHERE id = ?", id)
+	return err
+}
+
+// GetCollectionByID retrieves a collection by its ID
+func (db *DB) GetCollectionByID(id int) (*models.Collection, error) {
+	var col models.Collection
+	err := db.Get(&col, `
+		SELECT c.*, COUNT(cp.paper_id) as paper_count
+		FROM collections c
+		LEFT JOIN collection_papers cp ON c.id = cp.collection_id
+		WHERE c.id = ?
+		GROUP BY c.id
+	`, id)
+	if err != nil {
+		return nil, err
+	}
+	return &col, nil
+}
+
+// GetAllCollections retrieves all collections with their paper counts
+func (db *DB) GetAllCollections() ([]models.Collection, error) {
+	query := `
+		SELECT c.id, c.name, c.created_at, COUNT(cp.paper_id) as paper_count
+		FROM collections c
+		LEFT JOIN collection_papers cp ON c.id = cp.collection_id
+		GROUP BY c.id
+		ORDER BY c.name
+	`
+
+	var collections []models.Collection
+	if err := db.Select(&collections, query); err != nil {
+		return nil, err
+	}
+
+	if collections == nil {
+		collections = []models.Collection{}
+	}
+
+	return collections, nil
+}
+
+// GetUnassignedCount returns the number of saved papers not in any collection
+func (db *DB) GetUnassignedCount() (int, error) {
+	var count int
+	query := `
+		SELECT COUNT(DISTINCT l.paper_id)
+		FROM library l
+		WHERE NOT EXISTS (
+			SELECT 1 FROM collection_papers cp
+			WHERE cp.paper_id = l.paper_id
+		)
+	`
+	err := db.Get(&count, query)
+	return count, err
+}
+
+// AddPaperToCollection adds a paper to a collection
+func (db *DB) AddPaperToCollection(collectionID int, paperID string) error {
+	// First make sure the paper is in the library (saved)
+	if err := db.SaveToLibrary(paperID); err != nil {
+		return fmt.Errorf("failed to save paper to library first: %w", err)
+	}
+
+	query := `INSERT INTO collection_papers (collection_id, paper_id) VALUES (?, ?) ON CONFLICT DO NOTHING`
+	_, err := db.Exec(query, collectionID, paperID)
+	return err
+}
+
+// RemovePaperFromCollection removes a paper from a collection
+func (db *DB) RemovePaperFromCollection(collectionID int, paperID string) error {
+	query := `DELETE FROM collection_papers WHERE collection_id = ? AND paper_id = ?`
+	_, err := db.Exec(query, collectionID, paperID)
+	return err
+}
+
+// GetPaperCollections retrieves all collections a paper belongs to
+func (db *DB) GetPaperCollections(paperID string) ([]models.Collection, error) {
+	query := `
+		SELECT c.id, c.name, c.created_at FROM collections c
+		JOIN collection_papers cp ON c.id = cp.collection_id
+		WHERE cp.paper_id = ?
+		ORDER BY c.name
+	`
+
+	var collections []models.Collection
+	if err := db.Select(&collections, query, paperID); err != nil {
+		return nil, err
+	}
+
+	if collections == nil {
+		collections = []models.Collection{}
+	}
+
+	return collections, nil
+}
+
+// MovePaperCollection moves a paper from one collection to another
+func (db *DB) MovePaperCollection(paperID string, fromCollectionID, toCollectionID int) error {
+	// Get transaction helper
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+	
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Delete from old collection
+	if fromCollectionID > 0 {
+		_, err := tx.Exec("DELETE FROM collection_papers WHERE collection_id = ? AND paper_id = ?", fromCollectionID, paperID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Insert into new collection (if toCollectionID is valid, i.e., > 0)
+	if toCollectionID > 0 {
+		_, err := tx.Exec("INSERT INTO collection_papers (collection_id, paper_id) VALUES (?, ?) ON CONFLICT DO NOTHING", toCollectionID, paperID)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

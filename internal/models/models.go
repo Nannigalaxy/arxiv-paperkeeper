@@ -19,12 +19,21 @@ type Paper struct {
 	InLibrary bool  `db:"in_library"`
 	IsRead    bool  `db:"is_read"`
 	Tags      []Tag `db:"-"`
+	Collections []Collection `db:"-"`
 }
 
 // Tag represents a user-defined tag
 type Tag struct {
 	ID   int    `db:"id"`
 	Name string `db:"name"`
+}
+
+// Collection represents a user-defined collection
+type Collection struct {
+	ID        int       `db:"id"`
+	Name      string    `db:"name"`
+	CreatedAt time.Time `db:"created_at"`
+	PaperCount int      `db:"paper_count"`
 }
 
 // LibraryEntry represents a paper saved to the user's library
@@ -42,12 +51,13 @@ type PaperTag struct {
 
 // SearchParams holds parameters for searching and filtering papers
 type SearchParams struct {
-	Query      string
-	Tag        string
-	Category   string
-	InLibrary  bool
-	Page       int
-	PageSize   int
-	SortBy     string // "published", "title"
-	SortOrder  string // "asc", "desc"
+	Query        string
+	Tag          string
+	Category     string
+	InLibrary    bool
+	CollectionID int // 0 = all/none, -1 = unassigned, >0 = specific collection
+	Page         int
+	PageSize     int
+	SortBy       string // "published", "title"
+	SortOrder    string // "asc", "desc"
 }

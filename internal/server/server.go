@@ -69,6 +69,7 @@ func (s *Server) setupRoutes() {
 	s.router.Get("/", s.handler.HandleIndex)
 	s.router.Get("/paper/{id}", s.handler.HandlePaperDetail)
 	s.router.Get("/library", s.handler.HandleLibrary)
+	s.router.Get("/library/export", s.handler.HandleExportLibrary)
 	s.router.Get("/search", s.handler.HandleSearch)
 
 	// API routes (HTMX endpoints)
@@ -77,6 +78,14 @@ func (s *Server) setupRoutes() {
 	s.router.Post("/library/toggle-read/{id}", s.handler.HandleToggleRead)
 	s.router.Post("/tag/add", s.handler.HandleAddTag)
 	s.router.Post("/tag/remove", s.handler.HandleRemoveTag)
+	
+	// Collection routes
+	s.router.Post("/collection/create", s.handler.HandleCreateCollection)
+	s.router.Post("/collection/rename/{id}", s.handler.HandleRenameCollection)
+	s.router.Post("/collection/delete/{id}", s.handler.HandleDeleteCollection)
+	s.router.Post("/collection/add-paper", s.handler.HandleAddPaperToCollection)
+	s.router.Post("/collection/remove-paper", s.handler.HandleRemovePaperFromCollection)
+	s.router.Post("/collection/move-paper", s.handler.HandleMovePaperCollection)
 	
 	// Admin routes
 	s.router.Post("/admin/refresh", s.handler.HandleRefresh)

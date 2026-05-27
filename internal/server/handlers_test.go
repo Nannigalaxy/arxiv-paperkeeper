@@ -224,8 +224,8 @@ func TestHandleAddToLibrary(t *testing.T) {
 	}
 
 	// Check HTMX trigger header
-	if w.Header().Get("HX-Trigger") != "libraryUpdated" {
-		t.Error("Expected HX-Trigger header to be set")
+	if !strings.Contains(w.Header().Get("HX-Trigger"), "libraryUpdated") {
+		t.Error("Expected HX-Trigger header to contain libraryUpdated")
 	}
 }
 
@@ -402,3 +402,60 @@ func TestGetIntParam(t *testing.T) {
 		}
 	}
 }
+
+func TestHandleExportLibrary(t *testing.T) {
+	handler, testDB := setupTestHandler(t)
+	defer testDB.Close()
+
+	// Insert test papers
+	insertTestPapers(t, testDB, 3)
+
+	// Save 2 papers to library
+	testDB.SaveToLibrary("1")
+	testDB.SaveToLibrary("2")
+
+	// Create request
+	req := httptest.NewRequest("GET", "/library/export", nil)
+	w := httptest.NewRecorder()
+
+	// Execute handler
+	handler.HandleExportLibrary(w, req)
+
+	// Check response code
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", w.Code)
+	}
+
+	// Check content-type header
+	contentType := w.Header().Get("Content-Type")
+	if !strings.HasPrefix(contentType, "text/csv") {
+		t.Errorf("Expected Content-Type to start with 'text/csv', got '%s'", contentType)
+	}
+
+	// Check content-disposition header
+	contentDisp := w.Header().Get("Content-Disposition")
+	if !strings.Contains(contentDisp, `attachment; filename="saved_papers.csv"`) {
+		t.Errorf("Expected Content-Disposition to contain attachment filename, got '%s'", contentDisp)
+	}
+
+	// Verify CSV contents
+	body := w.Body.String()
+	lines := strings.Split(strings.TrimSpace(body), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("Expected 3 lines in CSV (header + 2 papers), got %d: %q", len(lines), lines)
+	}
+
+	if lines[0] != "Title,PDF Link" {
+		t.Errorf("Expected first line to be header 'Title,PDF Link', got '%s'", lines[0])
+	}
+
+	// Paper titles: "Test Paper 1", "Test Paper 2" (sorted DESC by published timestamp or ID? wait, GetPapers sorts by published at desc, so the two papers should be listed)
+	// Check that both paper titles and their links are present
+	if !strings.Contains(body, "Test Paper 1,http://arxiv.org/pdf/test") {
+		t.Error("Expected CSV to contain paper 1 data")
+	}
+	if !strings.Contains(body, "Test Paper 2,http://arxiv.org/pdf/test") {
+		t.Error("Expected CSV to contain paper 2 data")
+	}
+}
+

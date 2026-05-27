@@ -41,3 +41,23 @@ CREATE INDEX IF NOT EXISTS idx_papers_categories ON papers(categories);
 CREATE INDEX IF NOT EXISTS idx_library_saved ON library(saved_at DESC);
 CREATE INDEX IF NOT EXISTS idx_paper_tags_paper ON paper_tags(paper_id);
 CREATE INDEX IF NOT EXISTS idx_paper_tags_tag ON paper_tags(tag_id);
+
+-- Collections
+CREATE TABLE IF NOT EXISTS collections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Papers in collections (many-to-many relationship)
+CREATE TABLE IF NOT EXISTS collection_papers (
+    collection_id INTEGER,
+    paper_id TEXT,
+    PRIMARY KEY (collection_id, paper_id),
+    FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE,
+    FOREIGN KEY (paper_id) REFERENCES papers(id) ON DELETE CASCADE
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_collection_papers_collection ON collection_papers(collection_id);
+CREATE INDEX IF NOT EXISTS idx_collection_papers_paper ON collection_papers(paper_id);

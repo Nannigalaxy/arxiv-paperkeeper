@@ -1,139 +1,394 @@
 {{template "base" .}}
 
-{{define "content"}}
+{{define "library_content"}}
 <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">My Library</h1>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4 border-b border-gray-200 dark:border-gray-700 pb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">My Library</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">
+                {{if eq .SelectedCollection -1}}
+                    Filtering by: <span class="font-semibold text-red-800 dark:text-red-400">Unassigned Papers</span>
+                {{else if gt .SelectedCollection 0}}
+                    {{$activeName := ""}}
+                    {{range .Collections}}
+                        {{if eq .ID $.SelectedCollection}}{{$activeName = .Name}}{{end}}
+                    {{end}}
+                    Filtering by collection: <span class="font-semibold text-red-800 dark:text-red-400">{{$activeName}}</span>
+                {{else}}
+                    Manage, organize, and categorize your saved research papers.
+                {{end}}
+            </p>
+        </div>
+        <a href="/library/export?q={{.Query}}&tag={{.SelectedTag}}&category={{.SelectedCategory}}&collection={{if eq .SelectedCollection -1}}unassigned{{else if gt .SelectedCollection 0}}{{.SelectedCollection}}{{end}}" 
+           class="btn btn-primary flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200"
+           title="Export saved papers to CSV">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Export CSV</span>
+        </a>
+    </div>
 
-    <!-- Search and Filters -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6">
-        <form action="/library" method="get" class="space-y-4">
-            <div class="flex flex-col md:flex-row gap-4">
-                <input type="text" name="q" value="{{.Query}}" placeholder="Search your library..."
-                    class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                <button type="submit" class="btn btn-primary md:w-auto">
-                    Search
-                </button>
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Sidebar: Collections Manager -->
+        <div class="w-full lg:w-1/4 flex flex-col gap-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-5 border border-gray-150 dark:border-gray-750">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-2 cursor-pointer lg:cursor-default" id="collections-header">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="folder" class="w-5 h-5 text-red-800"></i>
+                        <span>Collections</span>
+                    </span>
+                    <!-- Toggle chevron only on mobile -->
+                    <button id="collections-toggle-btn" class="lg:hidden p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400" type="button" aria-label="Toggle collections list">
+                        <i data-lucide="chevron-down" id="collections-toggle-icon" class="w-5 h-5 transition-transform duration-200"></i>
+                    </button>
+                </h2>
+                
+                <div id="collections-content" class="hidden lg:block space-y-4">
+                
+                <ul class="space-y-1">
+                    <!-- All Saved Papers -->
+                    <li>
+                        <a href="/library" 
+                           class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{if eq .SelectedCollection 0}}bg-red-50 text-red-850 dark:bg-red-950/40 dark:text-red-300 font-semibold{{else}}text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750{{end}}">
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="bookmark" class="w-4 h-4 text-gray-400"></i>
+                                <span>All Saved Papers</span>
+                            </span>
+                            <span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full font-semibold">{{.LibraryCount}}</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Unassigned Papers -->
+                    <li>
+                        <a href="/library?collection=unassigned" 
+                           class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{if eq .SelectedCollection -1}}bg-red-50 text-red-850 dark:bg-red-950/40 dark:text-red-300 font-semibold{{else}}text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-750{{end}}">
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="inbox" class="w-4 h-4 text-gray-400"></i>
+                                <span>Unassigned Papers</span>
+                            </span>
+                            <span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full font-semibold">{{.UnassignedCount}}</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Divider -->
+                    <li class="h-px bg-gray-150 dark:bg-gray-700 my-3"></li>
+                    
+                    <!-- Custom Collections List -->
+                    {{range .Collections}}
+                    <li class="group flex items-center rounded-lg transition-all duration-200 {{if eq $.SelectedCollection .ID}}bg-red-50 dark:bg-red-950/40{{else}}hover:bg-gray-50 dark:hover:bg-gray-750{{end}}">
+                        <a href="/library?collection={{.ID}}" class="flex-1 flex items-center gap-2 px-3 py-2 text-sm min-w-0 {{if eq $.SelectedCollection .ID}}text-red-800 dark:text-red-300 font-semibold{{else}}text-gray-700 dark:text-gray-200{{end}}">
+                            <i data-lucide="folder-open" class="w-4 h-4 flex-shrink-0 {{if eq $.SelectedCollection .ID}}text-red-700{{else}}text-gray-400 group-hover:text-red-700{{end}}"></i>
+                            <span class="truncate">{{.Name}}</span>
+                        </a>
+                        <div class="flex items-center gap-1 pr-2 flex-shrink-0">
+                            <span class="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs px-1.5 py-0.5 rounded-full font-medium">{{.PaperCount}}</span>
+                            <button
+                                class="collection-rename-btn p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                data-id="{{.ID}}" data-name="{{.Name}}"
+                                title="Rename">
+                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button
+                                class="collection-delete-btn p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                data-id="{{.ID}}" data-name="{{.Name}}"
+                                title="Delete">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </li>
+                    {{else}}
+                    <li class="text-xs text-gray-400 dark:text-gray-500 text-center py-4 italic">No collections yet</li>
+                    {{end}}
+                </ul>
+                
+                <!-- Create Collection Form -->
+                <form hx-post="/collection/create" class="mt-4 flex gap-2 border-t border-gray-100 dark:border-gray-700 pt-4">
+                    <input type="text" name="name" placeholder="Create collection..." required 
+                           class="flex-1 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-800 dark:bg-gray-700 dark:text-white">
+                    <button type="submit" class="btn btn-primary px-3 py-1.5" title="Create Collection">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    </button>
+                </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Papers List & Filters -->
+        <div class="flex-1 w-full lg:w-3/4">
+            <!-- Search and Filters -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6 border border-gray-150 dark:border-gray-750">
+                <form action="/library" method="get" class="space-y-4">
+                    {{if $.SelectedCollection}}
+                    <input type="hidden" name="collection" value="{{if eq $.SelectedCollection -1}}unassigned{{else}}{{$.SelectedCollection}}{{end}}">
+                    {{end}}
+
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <input type="text" name="q" value="{{.Query}}" placeholder="Search in this view..."
+                            class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                        <button type="submit" class="btn btn-primary md:w-auto">
+                            Search
+                        </button>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-3">
+                        <!-- Hidden tag field (unused but keeps URL compat) -->
+                        <input type="hidden" name="tag" value="">
+
+                        <select name="category" class="select flex-1 md:flex-none md:w-64">
+                            <option value="">All Categories</option>
+                            <option value="cs.AI" {{if eq $.SelectedCategory "cs.AI" }}selected{{end}}>cs.AI — Artificial Intelligence</option>
+                            <option value="cs.LG" {{if eq $.SelectedCategory "cs.LG" }}selected{{end}}>cs.LG — Machine Learning</option>
+                            <option value="cs.CV" {{if eq $.SelectedCategory "cs.CV" }}selected{{end}}>cs.CV — Computer Vision</option>
+                            <option value="cs.CL" {{if eq $.SelectedCategory "cs.CL" }}selected{{end}}>cs.CL — Computation &amp; Language</option>
+                            <option value="cs.NE" {{if eq $.SelectedCategory "cs.NE" }}selected{{end}}>cs.NE — Neural Computing</option>
+                            <option value="cs.RO" {{if eq $.SelectedCategory "cs.RO" }}selected{{end}}>cs.RO — Robotics</option>
+                            <option value="cs.CR" {{if eq $.SelectedCategory "cs.CR" }}selected{{end}}>cs.CR — Cryptography</option>
+                            <option value="cs.DB" {{if eq $.SelectedCategory "cs.DB" }}selected{{end}}>cs.DB — Databases</option>
+                            <option value="cs.DC" {{if eq $.SelectedCategory "cs.DC" }}selected{{end}}>cs.DC — Distributed Computing</option>
+                            <option value="cs.SE" {{if eq $.SelectedCategory "cs.SE" }}selected{{end}}>cs.SE — Software Engineering</option>
+                            <option value="math.CO" {{if eq $.SelectedCategory "math.CO" }}selected{{end}}>math.CO — Combinatorics</option>
+                            <option value="math.PR" {{if eq $.SelectedCategory "math.PR" }}selected{{end}}>math.PR — Probability</option>
+                            <option value="math.ST" {{if eq $.SelectedCategory "math.ST" }}selected{{end}}>math.ST — Statistics</option>
+                            <option value="stat.ML" {{if eq $.SelectedCategory "stat.ML" }}selected{{end}}>stat.ML — Machine Learning</option>
+                            <option value="quant-ph" {{if eq $.SelectedCategory "quant-ph" }}selected{{end}}>quant-ph — Quantum Physics</option>
+                        </select>
+
+                        <button type="submit" class="btn btn-secondary">
+                            <i data-lucide="filter" class="w-4 h-4"></i> Filter
+                        </button>
+
+                        {{if or .Query .SelectedCategory}}
+                        <a href="/library{{if $.SelectedCollection}}?collection={{if eq $.SelectedCollection -1}}unassigned{{else}}{{$.SelectedCollection}}{{end}}{{end}}" class="btn btn-outline">
+                            <i data-lucide="x" class="w-4 h-4"></i> Clear
+                        </a>
+                        {{end}}
+                    </div>
+                </form>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-4">
-                <select name="tag"
-                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white w-full md:w-auto">
-                    <option value="">All Tags</option>
-                    {{range .Tags}}
-                    <option value="{{.Name}}" {{if eq $.SelectedTag .Name}}selected{{end}}>{{.Name}}</option>
-                    {{end}}
-                </select>
+            <!-- Results Info -->
+            <div class="mb-4 text-gray-600 dark:text-gray-400 font-medium">
+                Showing {{.TotalResults}} papers
+            </div>
 
-                <button type="submit" class="btn btn-secondary w-full md:w-auto">
-                    Filter
-                </button>
+            <!-- Papers List -->
+            <div class="space-y-4">
+                {{range .Papers}}
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-all duration-200 border border-gray-100 dark:border-gray-700 {{if .IsRead}}opacity-80{{end}}">
+                    <div class="flex flex-col md:flex-row justify-between items-start gap-4">
+                        <div class="flex-1">
+                            {{if .IsRead}}
+                            <span class="inline-block px-2.5 py-0.5 text-xs font-semibold text-green-800 bg-green-100 dark:bg-green-900/30 dark:text-green-300 rounded mb-2 border border-green-200 dark:border-green-800">
+                                ✓ Read
+                            </span>
+                            {{end}}
 
-                {{if or .Query .SelectedTag}}
-                <a href="/library" class="btn btn-outline w-full md:w-auto text-center">
-                    Clear Filters
+                            <h2 class="text-xl font-semibold mb-2">
+                                <a href="/paper/{{.ID}}" class="text-blue-600 dark:text-blue-400 hover:underline">
+                                    {{.Title}}
+                                </a>
+                            </h2>
+
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">
+                                {{.Authors}}
+                            </p>
+
+                            <p class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3 leading-relaxed abstract text-sm">
+                                {{.Abstract}}
+                            </p>
+
+                            <div class="flex flex-wrap items-center gap-4 text-sm mb-3">
+                                <span class="text-gray-500 dark:text-gray-400">
+                                    {{.PublishedAt.Format "Jan 2, 2006"}}
+                                </span>
+                                {{range (splitCategories .Categories)}}
+                                <a href="/?category={{.}}" 
+                                   class="text-gray-500 dark:text-gray-400 flex items-center gap-1 hover:text-red-700 dark:hover:text-red-400 transition-colors"
+                                   title="Browse {{.}} papers">
+                                    <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+                                    <span>{{.}}</span>
+                                </a>
+                                {{end}}
+                            </div>
+
+                            <!-- Collections Badges -->
+                            <div class="flex flex-wrap gap-2">
+                                {{range .Collections}}
+                                <a href="/library?collection={{.ID}}" 
+                                   class="tag bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors">
+                                    <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1"></i>{{.Name}}
+                                </a>
+                                {{end}}
+                            </div>
+                        </div>
+
+                        <!-- Card Action Buttons -->
+                        <div class="ml-0 md:ml-4 grid grid-cols-2 md:flex md:flex-col gap-2 w-full md:w-44 mt-4 md:mt-0 flex-shrink-0">
+                            <!-- Toggle Read button -->
+                            <button hx-post="/library/toggle-read/{{.ID}}" hx-swap="outerHTML"
+                                class="btn btn-sm w-full {{if .IsRead}}btn-success{{else}}btn-outline{{end}}">
+                                {{if .IsRead}}
+                                    <i data-lucide="check" class="w-4 h-4"></i> Read
+                                {{else}}
+                                    <i data-lucide="book-open" class="w-4 h-4"></i> Mark Read
+                                {{end}}
+                            </button>
+
+                            <!-- Collections Selector Dropdown -->
+                            <div class="relative w-full">
+                                <select onchange="handleCollectionSelect(this, '{{.ID}}', '{{$.SelectedCollection}}')" 
+                                        class="select select-sm w-full bg-white appearance-none cursor-pointer">
+                                    <option value="" disabled selected>Collections...</option>
+                                    
+                                    {{$paper := .}}
+                                    
+                                    <!-- Add / Remove options -->
+                                    <optgroup label="Add/Remove Collection">
+                                        {{range $col := $.Collections}}
+                                            {{$inThis := false}}
+                                            {{range $paper.Collections}}
+                                                {{if eq .ID $col.ID}}{{$inThis = true}}{{end}}
+                                            {{end}}
+                                            
+                                            {{if $inThis}}
+                                                <option value="remove:{{$col.ID}}">✓ {{$col.Name}} (Remove)</option>
+                                            {{else}}
+                                                <option value="add:{{$col.ID}}">+ {{$col.Name}}</option>
+                                            {{end}}
+                                        {{end}}
+                                    </optgroup>
+                                    
+                                    <!-- Move options (only if we are currently inside a custom collection) -->
+                                    {{if gt $.SelectedCollection 0}}
+                                    <optgroup label="Move to Collection">
+                                        {{range $.Collections}}
+                                            {{if ne .ID $.SelectedCollection}}
+                                                <option value="move:{{.ID}}">→ {{.Name}}</option>
+                                            {{end}}
+                                        {{end}}
+                                    </optgroup>
+                                    {{end}}
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
+                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                </div>
+                            </div>
+
+                            <!-- Remove from Library -->
+                            <button hx-post="/library/remove/{{.ID}}" hx-swap="outerHTML" class="btn btn-sm btn-secondary w-full">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Remove
+                            </button>
+
+                            <!-- PDF link -->
+                            <a href="{{.PDFUrl}}" target="_blank" class="btn btn-sm btn-outline w-full text-center">
+                                <i data-lucide="file-text" class="w-4 h-4"></i> PDF Link
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {{else}}
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12 text-center border border-gray-150 dark:border-gray-750">
+                    <p class="text-gray-500 dark:text-gray-400 text-lg">No papers found in this collection</p>
+                    <a href="/" class="btn btn-primary mt-4 inline-block">Browse Papers</a>
+                </div>
+                {{end}}
+            </div>
+
+            <!-- Pagination -->
+            {{if gt .TotalPages 1}}
+            <div class="mt-8 flex flex-wrap justify-center items-center gap-2">
+                {{if gt .CurrentPage 1}}
+                <a href="/library?page={{sub .CurrentPage 1}}{{if .Query}}&q={{.Query}}{{end}}{{if .SelectedTag}}&tag={{.SelectedTag}}{{end}}{{if $.SelectedCollection}}{{if eq $.SelectedCollection -1}}&collection=unassigned{{else}}&collection={{$.SelectedCollection}}{{end}}{{end}}"
+                    class="btn btn-outline">
+                    ← Previous
+                </a>
+                {{end}}
+
+                <span class="px-4 py-2 text-gray-700 dark:text-gray-300 font-medium">
+                    Page {{.CurrentPage}} of {{.TotalPages}}
+                </span>
+
+                {{if lt .CurrentPage .TotalPages}}
+                <a href="/library?page={{add .CurrentPage 1}}{{if .Query}}&q={{.Query}}{{end}}{{if .SelectedTag}}&tag={{.SelectedTag}}{{end}}{{if $.SelectedCollection}}{{if eq $.SelectedCollection -1}}&collection=unassigned{{else}}&collection={{$.SelectedCollection}}{{end}}{{end}}"
+                    class="btn btn-outline">
+                    Next →
                 </a>
                 {{end}}
             </div>
-        </form>
+            {{end}}
+        </div>
     </div>
+</div>
 
-    <!-- Results Info -->
-    <div class="mb-4 text-gray-600 dark:text-gray-400">
-        {{.TotalResults}} papers in your library
+<!-- Premium Rename Collection Modal -->
+<div id="rename-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none">
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm modal-overlay"></div>
+    
+    <!-- Content Card -->
+    <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden transform scale-95 transition-transform duration-300 border border-gray-150 dark:border-gray-700 z-10">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                    <i data-lucide="folder-open" class="w-5 h-5"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Rename Collection</h3>
+            </div>
+            
+            <form id="rename-form" onsubmit="submitRename(event)">
+                <input type="hidden" id="rename-collection-id">
+                <div class="mb-5">
+                    <label for="rename-collection-name" class="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">New Name</label>
+                    <input type="text" id="rename-collection-name" required
+                           class="w-full px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-800 dark:bg-gray-700 dark:text-white transition-all duration-200">
+                </div>
+                
+                <div class="flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700 pt-4">
+                    <button type="button" onclick="closeRenameModal()" 
+                            class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-750 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
 
-    <!-- Papers List -->
-    <div class="space-y-4">
-        {{range .Papers}}
-        <div
-            class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow {{if .IsRead}}opacity-75{{end}}">
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    {{if .IsRead}}
-                    <span
-                        class="inline-block px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 dark:bg-green-900 dark:text-green-200 rounded mb-2">
-                        ✓ Read
-                    </span>
-                    {{end}}
-
-                    <h2 class="text-xl font-semibold mb-2">
-                        <a href="/paper/{{.ID}}" class="text-blue-600 dark:text-blue-400 hover:underline">
-                            {{.Title}}
-                        </a>
-                    </h2>
-
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        {{.Authors}}
-                    </p>
-
-                    <p class="text-gray-700 dark:text-gray-300 mb-3 line-clamp-2">
-                        {{.Abstract}}
-                    </p>
-
-                    <div class="flex items-center gap-4 text-sm">
-                        <span class="text-gray-500 dark:text-gray-400">
-                            {{.PublishedAt.Format "Jan 2, 2006"}}
-                        </span>
-                        <span class="text-gray-500 dark:text-gray-400">
-                            🏷️ {{.Categories}}
-                        </span>
-                    </div>
-
-                    <!-- Tags -->
-                    {{if .Tags}}
-                    <div class="mt-3 flex flex-wrap gap-2">
-                        {{range .Tags}}
-                        <span class="tag">{{.Name}}</span>
-                        {{end}}
-                    </div>
-                    {{end}}
+<!-- Premium Delete Collection Modal -->
+<div id="delete-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none">
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm modal-overlay"></div>
+    
+    <!-- Content Card -->
+    <div class="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden transform scale-95 transition-transform duration-300 border border-gray-150 dark:border-gray-700 z-10">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                 </div>
-
-                <div class="ml-4 flex flex-col gap-2">
-                    <button hx-post="/library/toggle-read/{{.ID}}" hx-swap="outerHTML"
-                        class="{{if .IsRead}}btn btn-sm btn-success{{else}}btn btn-sm btn-outline{{end}}">
-                        {{if .IsRead}}✓ Read{{else}}Mark as Read{{end}}
-                    </button>
-
-                    <button hx-post="/library/remove/{{.ID}}" hx-swap="outerHTML" class="btn btn-sm btn-secondary">
-                        Remove
-                    </button>
-
-                    <a href="{{.PDFUrl}}" target="_blank" class="btn btn-sm btn-outline text-center">
-                        📄 PDF
-                    </a>
-                </div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Delete Collection</h3>
+            </div>
+            
+            <p class="text-sm text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                Are you sure you want to delete <span id="delete-collection-display-name" class="font-bold text-gray-900 dark:text-white"></span>?<br>
+                <span class="text-xs text-gray-550 dark:text-gray-400 mt-2 block">Note: Papers inside this collection will NOT be deleted from your library.</span>
+            </p>
+            
+            <div class="flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700 pt-4">
+                <input type="hidden" id="delete-collection-id">
+                <button type="button" onclick="closeDeleteModal()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-750 rounded-lg transition-colors">
+                    Cancel
+                </button>
+                <button type="button" onclick="submitDelete()" 
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg transition-colors shadow-sm">
+                    Delete
+                </button>
             </div>
         </div>
-        {{else}}
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12 text-center">
-            <p class="text-gray-500 dark:text-gray-400 text-lg">Your library is empty</p>
-            <a href="/" class="btn btn-primary mt-4 inline-block">Browse Papers</a>
-        </div>
-        {{end}}
     </div>
-
-    <!-- Pagination -->
-    {{if gt .TotalPages 1}}
-    <div class="mt-8 flex justify-center gap-2">
-        {{if gt .CurrentPage 1}}
-        <a href="/library?page={{sub .CurrentPage 1}}{{if .Query}}&q={{.Query}}{{end}}{{if .SelectedTag}}&tag={{.SelectedTag}}{{end}}"
-            class="btn btn-outline">
-            ← Previous
-        </a>
-        {{end}}
-
-        <span class="px-4 py-2 text-gray-700 dark:text-gray-300">
-            Page {{.CurrentPage}} of {{.TotalPages}}
-        </span>
-
-        {{if lt .CurrentPage .TotalPages}}
-        <a href="/library?page={{add .CurrentPage 1}}{{if .Query}}&q={{.Query}}{{end}}{{if .SelectedTag}}&tag={{.SelectedTag}}{{end}}"
-            class="btn btn-outline">
-            Next →
-        </a>
-        {{end}}
-    </div>
-    {{end}}
 </div>
 {{end}}

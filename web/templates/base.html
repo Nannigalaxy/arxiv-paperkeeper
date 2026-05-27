@@ -37,9 +37,8 @@
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-200">
-    <!-- Navigation -->
     <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div class="container mx-auto px-4">
+        <div class="container max-w-6xl mx-auto px-4">
             <div class="flex items-center justify-between h-16">
                 <!-- Logo -->
                 <div class="flex items-center space-x-2">
@@ -104,8 +103,14 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8 flex-1">
-        {{template "content" .}}
+    <main class="container max-w-6xl mx-auto px-4 py-8 flex-1">
+        {{if .Paper}}
+            {{template "detail_content" .}}
+        {{else if .InLibrary}}
+            {{template "library_content" .}}
+        {{else}}
+            {{template "list_content" .}}
+        {{end}}
     </main>
 
     <!-- Footer -->
@@ -363,6 +368,38 @@
             localTimeSpan.textContent = new Date().toLocaleString();
         }
 
+        // Collapsible Collections Sidebar on Mobile
+        const collectionsHeader = document.getElementById('collections-header');
+        const collectionsToggleBtn = document.getElementById('collections-toggle-btn');
+        const collectionsContent = document.getElementById('collections-content');
+        const collectionsToggleIcon = document.getElementById('collections-toggle-icon');
+        
+        if (collectionsHeader && collectionsContent && collectionsToggleIcon) {
+            const toggleCollections = () => {
+                const isHidden = collectionsContent.classList.contains('hidden');
+                if (isHidden) {
+                    collectionsContent.classList.remove('hidden');
+                    collectionsToggleIcon.classList.add('rotate-180');
+                } else {
+                    collectionsContent.classList.add('hidden');
+                    collectionsToggleIcon.classList.remove('rotate-180');
+                }
+            };
+            
+            collectionsHeader.addEventListener('click', () => {
+                if (window.innerWidth < 1024) { // lg breakpoint is 1024px
+                    toggleCollections();
+                }
+            });
+            
+            if (collectionsToggleBtn) {
+                collectionsToggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleCollections();
+                });
+            }
+        }
+
         // Go to Top Button
         const scrollToTopBtn = document.getElementById('scroll-to-top');
 
@@ -381,6 +418,229 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
+
+        // Modal Helper Functions
+        window.openRenameModal = function(id, name) {
+            const modal = document.getElementById('rename-modal');
+            if (!modal) return;
+            document.getElementById('rename-collection-id').value = id;
+            document.getElementById('rename-collection-name').value = name;
+            
+            modal.classList.remove('hidden');
+            // Trigger browser layout
+            modal.offsetHeight;
+            modal.classList.remove('pointer-events-none', 'opacity-0');
+            modal.querySelector('.transform').classList.remove('scale-95');
+            modal.querySelector('.transform').classList.add('scale-100');
+            
+            // Reinitialize icons in case they were dynamically added
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+            
+            // Focus input
+            setTimeout(() => {
+                const nameInput = document.getElementById('rename-collection-name');
+                if (nameInput) {
+                    nameInput.focus();
+                    nameInput.select();
+                }
+            }, 100);
+        };
+        
+        window.closeRenameModal = function() {
+            const modal = document.getElementById('rename-modal');
+            if (!modal) return;
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.transform').classList.remove('scale-100');
+            modal.querySelector('.transform').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        };
+        
+        window.submitRename = function(event) {
+            event.preventDefault();
+            const id = document.getElementById('rename-collection-id').value;
+            const newName = document.getElementById('rename-collection-name').value.trim();
+            if (!newName) return;
+            
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...`;
+            
+            const body = new URLSearchParams({ name: newName });
+            fetch(`/collection/rename/${id}`, { method: 'POST', body })
+                .then(res => {
+                    const redirect = res.headers.get('HX-Redirect');
+                    if (redirect) { window.location.href = redirect; }
+                    else if (res.ok) { window.location.reload(); }
+                    else { 
+                        res.text().then(t => showToast(t || 'Failed to rename', 'error')); 
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalHTML;
+                    }
+                })
+                .catch(() => {
+                    showToast('Network error', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                });
+        };
+        
+        window.openDeleteModal = function(id, name) {
+            const modal = document.getElementById('delete-modal');
+            if (!modal) return;
+            document.getElementById('delete-collection-id').value = id;
+            document.getElementById('delete-collection-display-name').textContent = `"${name}"`;
+            
+            modal.classList.remove('hidden');
+            modal.offsetHeight;
+            modal.classList.remove('pointer-events-none', 'opacity-0');
+            modal.querySelector('.transform').classList.remove('scale-95');
+            modal.querySelector('.transform').classList.add('scale-100');
+            
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        };
+        
+        window.closeDeleteModal = function() {
+            const modal = document.getElementById('delete-modal');
+            if (!modal) return;
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.transform').classList.remove('scale-100');
+            modal.querySelector('.transform').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        };
+        
+        window.submitDelete = function() {
+            const id = document.getElementById('delete-collection-id').value;
+            const modal = document.getElementById('delete-modal');
+            const submitBtn = modal.querySelector('button[onclick="submitDelete()"]');
+            const originalHTML = submitBtn.innerHTML;
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white inline mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Deleting...`;
+            
+            fetch(`/collection/delete/${id}`, { method: 'POST' })
+                .then(res => {
+                    const redirect = res.headers.get('HX-Redirect');
+                    if (redirect) { window.location.href = redirect; }
+                    else if (res.ok) { window.location.href = '/library'; }
+                    else { 
+                        showToast('Failed to delete collection', 'error'); 
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalHTML;
+                    }
+                })
+                .catch(() => {
+                    showToast('Network error', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalHTML;
+                });
+        };
+
+        // Collection Management — event delegation (safe for names with any characters)
+        document.addEventListener('click', function(e) {
+            const renameBtn = e.target.closest('.collection-rename-btn');
+            if (renameBtn) {
+                e.preventDefault();
+                const id = renameBtn.dataset.id;
+                const name = renameBtn.dataset.name;
+                if (window.openRenameModal && document.getElementById('rename-modal')) {
+                    window.openRenameModal(id, name);
+                } else {
+                    const newName = prompt('Rename collection:', name);
+                    if (!newName || newName.trim() === '' || newName.trim() === name) return;
+                    const body = new URLSearchParams({ name: newName.trim() });
+                    fetch(`/collection/rename/${id}`, { method: 'POST', body })
+                        .then(res => {
+                            const redirect = res.headers.get('HX-Redirect');
+                            if (redirect) { window.location.href = redirect; }
+                            else if (res.ok) { window.location.reload(); }
+                            else { res.text().then(t => showToast(t || 'Failed to rename', 'error')); }
+                        })
+                        .catch(() => showToast('Network error', 'error'));
+                }
+            }
+
+            const deleteBtn = e.target.closest('.collection-delete-btn');
+            if (deleteBtn) {
+                e.preventDefault();
+                const id = deleteBtn.dataset.id;
+                const name = deleteBtn.dataset.name;
+                if (window.openDeleteModal && document.getElementById('delete-modal')) {
+                    window.openDeleteModal(id, name);
+                } else {
+                    if (!confirm(`Delete "${name}"?\nPapers inside will NOT be deleted.`)) return;
+                    fetch(`/collection/delete/${id}`, { method: 'POST' })
+                        .then(res => {
+                            const redirect = res.headers.get('HX-Redirect');
+                            if (redirect) { window.location.href = redirect; }
+                            else if (res.ok) { window.location.href = '/library'; }
+                            else { showToast('Failed to delete collection', 'error'); }
+                        })
+                        .catch(() => showToast('Network error', 'error'));
+                }
+            }
+            
+            // Close modals when clicking on overlays
+            const overlay = e.target.closest('.modal-overlay');
+            if (overlay) {
+                if (window.closeRenameModal) window.closeRenameModal();
+                if (window.closeDeleteModal) window.closeDeleteModal();
+            }
+        });
+        
+        // Escape key to close modals
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (window.closeRenameModal) window.closeRenameModal();
+                if (window.closeDeleteModal) window.closeDeleteModal();
+            }
+        });
+
+
+        window.handleCollectionSelect = function(selectElement, paperID, currentCollectionID) {
+            const value = selectElement.value;
+            if (!value) return;
+
+            const parts = value.split(':');
+            const action = parts[0];
+            const collectionID = parts[1];
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+
+            if (action === 'add') {
+                form.action = '/collection/add-paper';
+            } else if (action === 'remove') {
+                form.action = '/collection/remove-paper';
+            } else if (action === 'move') {
+                form.action = '/collection/move-paper';
+            }
+
+            document.body.appendChild(form);
+            
+            if (window.htmx) {
+                htmx.ajax('POST', form.action, {
+                    values: {
+                        paper_id: paperID,
+                        collection_id: collectionID,
+                        from_collection_id: currentCollectionID,
+                        to_collection_id: collectionID
+                    }
+                });
+            } else {
+                form.submit();
+            }
+            
+            selectElement.value = "";
+        };
     </script>
 </body>
 

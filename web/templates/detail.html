@@ -1,6 +1,6 @@
 {{template "base" .}}
 
-{{define "content"}}
+{{define "detail_content"}}
 <div class="max-w-4xl mx-auto">
     <!-- Back Button -->
     <div class="mb-4">
@@ -11,7 +11,7 @@
 
     {{if .Paper}}
     <!-- Paper Details -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-5 sm:p-8">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             {{.Paper.Title}}
         </h1>
@@ -42,29 +42,77 @@
         <!-- Links -->
         <div class="mb-6 flex gap-4">
             <a href="{{.Paper.PDFUrl}}" target="_blank" class="btn btn-primary">
-                📄 Download
+                <i data-lucide="download" class="w-4 h-4"></i> Download
             </a>
             <a href="{{.Paper.ArxivUrl}}" target="_blank" class="btn btn-outline">
-                🔗 View on arXiv
+                <i data-lucide="external-link" class="w-4 h-4"></i> View on arXiv
             </a>
         </div>
 
         <!-- Library Actions -->
-        <div class="mb-6 flex gap-4">
+        <div class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl">
             {{if .Paper.InLibrary}}
-            <button hx-post="/library/remove/{{.Paper.ID}}" hx-swap="outerHTML" class="btn btn-secondary">
-                Remove from Library
+            <button hx-post="/library/remove/{{.Paper.ID}}" hx-swap="outerHTML" class="btn btn-secondary w-full">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Remove
             </button>
             <button hx-post="/library/toggle-read/{{.Paper.ID}}" hx-swap="outerHTML"
-                class="{{if .Paper.IsRead}}btn btn-sm btn-success{{else}}btn btn-sm btn-outline{{end}}">
-                {{if .Paper.IsRead}}✓ Read{{else}}Mark as Read{{end}}
+                class="btn {{if .Paper.IsRead}}btn-success{{else}}btn-outline{{end}} w-full">
+                {{if .Paper.IsRead}}
+                    <i data-lucide="check" class="w-4 h-4"></i> Read
+                {{else}}
+                    <i data-lucide="book-open" class="w-4 h-4"></i> Mark Read
+                {{end}}
             </button>
             {{else}}
-            <button hx-post="/library/add/{{.Paper.ID}}" hx-swap="outerHTML" class="btn btn-primary">
-                Save to Library
+            <button hx-post="/library/add/{{.Paper.ID}}" hx-swap="outerHTML" class="btn btn-primary w-full sm:col-span-2">
+                <i data-lucide="bookmark" class="w-4 h-4"></i> Save to Library
             </button>
             {{end}}
+
+            <!-- Collections Selector Dropdown -->
+            <div class="relative w-full">
+                <select onchange="handleCollectionSelect(this, '{{.Paper.ID}}', '0')" 
+                        class="select w-full bg-white appearance-none cursor-pointer"
+                        title="Add to / Remove from Collections">
+                    <option value="" disabled selected>Collections...</option>
+                    
+                    {{$paper := .Paper}}
+                    
+                    <!-- Add / Remove options -->
+                    <optgroup label="Add/Remove Collection">
+                        {{range $col := $.Collections}}
+                            {{$inThis := false}}
+                            {{range $paper.Collections}}
+                                {{if eq .ID $col.ID}}{{$inThis = true}}{{end}}
+                            {{end}}
+                            
+                            {{if $inThis}}
+                                <option value="remove:{{$col.ID}}">✓ {{$col.Name}} (Remove)</option>
+                            {{else}}
+                                <option value="add:{{$col.ID}}">+ {{$col.Name}}</option>
+                            {{end}}
+                        {{end}}
+                    </optgroup>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400">
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </div>
+            </div>
         </div>
+
+        <!-- Collections -->
+        {{if .Paper.Collections}}
+        <div class="mb-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">Collections</h2>
+            <div class="flex flex-wrap gap-2">
+                {{range .Paper.Collections}}
+                <span class="tag bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
+                    <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1"></i>{{.Name}}
+                </span>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
 
         <!-- Tags -->
         <div class="border-t border-gray-200 dark:border-gray-700 pt-6">

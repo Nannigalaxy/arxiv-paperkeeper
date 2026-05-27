@@ -3,6 +3,7 @@ package server
 import (
 	"html/template"
 	"path/filepath"
+	"strings"
 )
 
 // NewTemplates creates a new template set with helper functions
@@ -46,6 +47,18 @@ func NewTemplates() (*template.Template, error) {
 			result := make([]int, n)
 			for i := 0; i < n; i++ {
 				result[i] = i
+			}
+			return result
+		},
+		// splitCategories splits a comma-separated categories string into individual trimmed category codes
+		"splitCategories": func(cats string) []string {
+			parts := strings.Split(cats, ",")
+			result := make([]string, 0, len(parts))
+			for _, p := range parts {
+				p = strings.TrimSpace(p)
+				if p != "" {
+					result = append(result, p)
+				}
 			}
 			return result
 		},
