@@ -229,7 +229,7 @@
                             </p>
 
                             <p
-                                class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3 leading-relaxed abstract text-sm">
+                                class="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3 leading-relaxed abstract text-sm text-justify">
                                 {{.Abstract}}
                             </p>
 
@@ -260,7 +260,7 @@
 
                         <!-- Card Action Buttons -->
                         <div
-                            class="ml-0 md:ml-4 grid grid-cols-2 md:flex md:flex-col gap-2 w-full md:w-44 mt-4 md:mt-0 flex-shrink-0">
+                            class="ml-0 md:ml-4 grid grid-cols-2 md:flex md:flex-col gap-2 w-full md:w-40 mt-4 md:mt-0 flex-shrink-0">
                             <!-- Toggle Read button -->
                             <button hx-post="/library/toggle-read/{{.ID}}" hx-swap="outerHTML"
                                 class="btn btn-sm w-full {{if .IsRead}}btn-success{{else}}btn-outline{{end}}">
