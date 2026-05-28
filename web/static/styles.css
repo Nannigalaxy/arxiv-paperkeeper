@@ -507,3 +507,28 @@ span.bg-red-800 {
 .max-w-4xl {
     max-width: 56rem;
 }
+
+/* Collection tag style alignment */
+.tag-collection {
+    background-color: rgba(179, 27, 27, 0.05) !important;
+    color: var(--arxiv-red) !important;
+    border-color: rgba(179, 27, 27, 0.15) !important;
+}
+
+[data-theme="dark"] .tag-collection {
+    background-color: rgba(179, 27, 27, 0.2) !important;
+    color: #fca5a5 !important;
+    border-color: rgba(179, 27, 27, 0.4) !important;
+}
+
+.tag-collection:hover {
+    background-color: rgba(179, 27, 27, 0.1) !important;
+    border-color: var(--arxiv-red) !important;
+    color: var(--arxiv-dark-red) !important;
+}
+
+[data-theme="dark"] .tag-collection:hover {
+    background-color: rgba(179, 27, 27, 0.3) !important;
+    border-color: #fca5a5 !important;
+    color: #fecaca !important;
+}

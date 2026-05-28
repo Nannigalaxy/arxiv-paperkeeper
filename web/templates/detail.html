@@ -4,7 +4,7 @@
 <div class="max-w-4xl mx-auto">
     <!-- Back Button -->
     <div class="mb-4">
-        <a href="javascript:history.back()" class="text-blue-600 dark:text-blue-400 hover:underline">
+        <a href="javascript:history.back()" class="hover:underline font-medium">
             ← Back
         </a>
     </div>
@@ -109,7 +109,7 @@
             <div class="flex flex-wrap gap-2">
                 {{range .Paper.Collections}}
                 <span
-                    class="tag bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
+                    class="tag tag-collection">
                     <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1"></i>{{.Name}}
                 </span>
                 {{end}}

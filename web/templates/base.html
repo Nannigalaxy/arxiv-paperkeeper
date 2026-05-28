@@ -7,6 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} - ArXiv PaperKeeper</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
@@ -49,10 +54,10 @@
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="/"
-                        class="nav-link text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Browse
+                        class="nav-link text-sm font-medium">Browse
                         Papers</a>
                     <a href="/library"
-                        class="nav-link text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">My
+                        class="nav-link text-sm font-medium">My
                         Library ({{.LibraryCount}})</a>
 
                     <div class="flex items-center gap-4 border-l pl-4 border-gray-200 dark:border-gray-700">
@@ -119,7 +124,7 @@
             <p>ArXiv PaperKeeper - A lightweight arXiv paper browser</p>
             <p class="mt-2">
                 <button hx-post="/admin/refresh" hx-target="#refresh-status" hx-indicator="#refresh-spinner"
-                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400 inline-flex items-center gap-2">
+                    class="text-red-700 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 inline-flex items-center gap-2 font-medium">
                     <span>Refresh Papers</span>
                     <span id="refresh-spinner" class="htmx-indicator">
                         <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -175,6 +180,11 @@
             const theme = savedTheme || systemTheme;
 
             html.setAttribute('data-theme', theme);
+            if (theme === 'dark') {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
             updateThemeIcon(theme);
         }
 
@@ -197,6 +207,11 @@
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
             html.setAttribute('data-theme', newTheme);
+            if (newTheme === 'dark') {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
             localStorage.setItem('theme', newTheme);
             updateThemeIcon(newTheme);
         }
